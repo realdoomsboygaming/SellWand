@@ -288,12 +288,42 @@ public class PlayerInteractListener implements Listener {
 				return;
 			}
 
-			if (plugin.getConfig().getBoolean("Log sell with sell wand in console") && amount != 0D)
-				plugin.getLog().log("Player " + player.getName() + " sell " + itemAmount + " items for a total of " + EconomyManager.formatEconomy(amount));
-
 			if (amount != 0D) {
 				EconomyManager.deposit(player, amount);
-				if (uses != -1)
+
+				if (uses > 0) {
+					plugin.getLocale().getMessage("sellwand.sell-success")
+							.processPlaceholder("price", EconomyManager.formatEconomy(amount))
+							.processPlaceholder("item_amount", String.valueOf(itemAmount))
+							.processPlaceholder("multiplier", String.valueOf(multiplier))
+							.sendPrefixedMessage(player);
+					
+					if(!PermissionUtils.hasPermission(player, "sellwand.cooldown.bypass")){
+						int cooldown = PermissionUtils.getNumberFromPermission(player, "sellwand.cooldown", false, 0);
+						CooldownBuilder.addCooldown("Use cooldown", player.getUniqueId(), cooldown);
+					}
+					
+					if(sellSound != null)
+						player.playSound(player.getLocation(), sellSound, 1f, 1f);
+
+					if (amount != 0D) {
+						EconomyManager.deposit(player, amount);
+						
+						if (plugin.getConfig().getBoolean("Log sell with sell wand in console") && amount != 0D)
+							plugin.getLog().log("Player " + player.getName() + " sell " + itemAmount + " items for a total of " + EconomyManager.formatEconomy(amount));
+
+						if(!PermissionUtils.hasPermission(player, "sellwand.cooldown.bypass")){
+							int cooldown = PermissionUtils.getNumberFromPermission(player, "sellwand.cooldown", false, 0);
+							CooldownBuilder.addCooldown("Use cooldown", player.getUniqueId(), cooldown);
+						}
+						
+						if(sellSound != null)
+							player.playSound(player.getLocation(), sellSound, 1f, 1f);
+					} else {
+						if(errorSound != null)
+							player.playSound(player.getLocation(), errorSound, 1f, 1f);
+						plugin.getLocale().getMessage("sellwand.sell-nothing").sendPrefixedMessage(player);
+					}
 					--uses;
 				Object hand = null;
 				if(!ReflectionUtils.getVersion().contains("1_8"))
@@ -314,6 +344,10 @@ public class PlayerInteractListener implements Listener {
 				}
 				if(sellSound != null)
 					player.playSound(player.getLocation(), sellSound, 1f, 1f);
+
+				if (plugin.getConfig().getBoolean("Log sell with sell wand in console") && amount != 0D)
+					plugin.getLog().log("Player " + player.getName() + " sell " + itemAmount + " items for a total of " + EconomyManager.formatEconomy(amount));
+
 			} else {
 				if(errorSound != null)
 					player.playSound(player.getLocation(), errorSound, 1f, 1f);
